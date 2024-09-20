@@ -1,0 +1,67 @@
+﻿@page "/"
+@using BlazorAppTest.Data
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Principal
+@inject IServiceProvider _serviceProvider
+@inject UserManager<Data.ApplicationUser> UserManager
+@inject AuthenticationStateProvider _authenticationStateProvider
+
+<PageTitle>Home</PageTitle>
+
+@if (_Authenticated)
+{
+    
+}
+
+
+
+<h1>Hello, world!</h1>
+<AuthorizeView >
+    <Authorized>
+        <p id="View">you are logged in!!!</p>
+    </Authorized>
+    <NotAuthorized>
+        <p id="View">you are NOT logged in, dummy</p>
+    </NotAuthorized>
+
+</AuthorizeView>
+<AuthorizeView Roles="Admin" Context="innerContext">
+    <p id="AdminView">Btw you da Admin</p>
+</AuthorizeView>
+
+
+    @code{
+    public bool _Authenticated;
+    public bool _IsAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // await CreateUserRolesAsync("pernillelarsen99@hotmail.com","Admin");
+        var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        _Authenticated = user.Identity.IsAuthenticated;
+        _IsAdmin = user.IsInRole("Admin");
+
+
+    }
+
+
+
+    public async Task CreateUserRolesAsync(string user, string role)
+    {
+        var roleManager = _serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var userManager = UserManager;
+
+        var userRoleCheck = await roleManager.RoleExistsAsync(role);
+        if (!userRoleCheck)
+            await roleManager.CreateAsync(new IdentityRole(role));
+
+        Data.ApplicationUser identityUser = await userManager.FindByEmailAsync(user);
+        await userManager.AddToRoleAsync(identityUser, role);
+
+    }
+
+
+}
+
+    
