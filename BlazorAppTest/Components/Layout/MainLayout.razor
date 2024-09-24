@@ -1,15 +1,37 @@
-﻿@inherits LayoutComponentBase
+﻿@using BlazorAppTest.Data
+@using Microsoft.AspNetCore.Identity
+@inherits LayoutComponentBase
+
+
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        <div class="top-row px-5">
+        
+            <AuthorizeView>
+                <NotAuthorized>
+                    <NavLink href="Account/Login">
+                        <span>Login </span>
+                    </NavLink>
+                </NotAuthorized>
+                <Authorized>
+                    <form action="Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="nav-link">
+                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+                        </button>
+                    </form>
+                    <NavLink href="Account/LoginWithCPR">
+                        <span>ToDoList</span>
+                    </NavLink>
 
+                </Authorized>
+            </AuthorizeView>
+
+        </div>
         <article class="content px-4">
             @Body
         </article>
@@ -21,3 +43,26 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@inject NavigationManager NavigationManager
+
+@code {
+    private string? currentUrl;
+    private List<string> whiteListPages;
+
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        base.OnInitialized();
+        var user = (await AuthStat).User;
+        if (!user.Identity.IsAuthenticated)
+        {
+            if (NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Login") && NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Register") && !NavigationManager.Uri.Contains(NavigationManager.BaseUri + ($"Account/LoginWith2fa")))
+            {
+                NavigationManager.NavigateTo($"/Account/Login");
+            }
+        }
+    }
+}

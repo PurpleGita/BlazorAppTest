@@ -1,0 +1,48 @@
+﻿@page "/Account/LoginWithCPR"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using BlazorAppTest.Data
+
+<h3>CPR</h3>
+
+<div class="form-floating mb-3">
+    <p>User logged in:</p>
+</div>
+
+<div class="form-floating mb-3">
+    <EditForm Model="Input" method="post" OnValidSubmit="LoginCPR" FormName="loginCPR">
+        <InputText @bind-Value="Input.CPR" class="form-control" autocomplete="CPR" aria-required="true" placeholder="0000000000" />
+        <label for="CPR" class="form-label">CPR</label>
+        <div>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+
+    private sealed class InputModel
+    {
+        [Required]
+        [EmailAddress]
+        public string CPR { get; set; } = "";
+
+        [Required]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Display(Name = "Remember me?")]
+        public bool RememberMe { get; set; }
+    }
+
+    private void LoginCPR()
+    {
+        
+    }
+}
