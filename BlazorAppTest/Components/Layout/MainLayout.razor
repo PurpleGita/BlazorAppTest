@@ -58,8 +58,8 @@
         base.OnInitialized();
         var user = (await AuthStat).User;
         if (!user.Identity.IsAuthenticated)
-        {
-            if (NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Login") && NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Register") && !NavigationManager.Uri.Contains(NavigationManager.BaseUri + ($"Account/LoginWith2fa")))
+        {   
+            if (NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Login") && NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Register") && !NavigationManager.Uri.Contains(NavigationManager.BaseUri + ($"Account/LoginWith2fa")) && NavigationManager.Uri != NavigationManager.BaseUri + ($"Account/Manage/Disable2fa"))
             {
                 NavigationManager.NavigateTo($"/Account/Login");
             }

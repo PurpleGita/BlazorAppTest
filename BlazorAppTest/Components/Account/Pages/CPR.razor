@@ -1,48 +1,174 @@
 ﻿@page "/Account/LoginWithCPR"
 
 @using System.ComponentModel.DataAnnotations
+@using BlazorAppTest.Components.Model
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using BlazorAppTest.Data
 
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject Hashing.HashingHandler HashingHandler;
+@inject Hashing.SymtriskHandler SymtriskHandler;
+@inject Hashing.AsymtriskHandlercs AsymetricHandler;
+@inject ToDoContext ToDoContext
+@rendermode InteractiveServer
+
+
 <h3>CPR</h3>
 
 <div class="form-floating mb-3">
-    <p>User logged in:</p>
+   
+     <AuthorizeView>
+            <Authorized>
+            <p>User logged in: @userName</p>
+        </Authorized>
+   </AuthorizeView>
 </div>
+@if (!showList)
+{
+    <div class="form-floating mb-3">
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginCPR" FormName="loginCPR">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <InputText @bind-Value="Input.CPR" class="form-control" autocomplete="CPR" aria-required="true" placeholder="0000000000" @oninput="@(e => Input.CPR = new string(e.Value.ToString().Where(char.IsDigit).ToArray()))" maxlength="10" />
+            <label for="CPR" class="form-label">CPR</label>
+            <ValidationMessage For="() => Input.CPR" />
+            <div>
+                <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+            </div>
+        </EditForm>
+    </div>
+}
 
-<div class="form-floating mb-3">
-    <EditForm Model="Input" method="post" OnValidSubmit="LoginCPR" FormName="loginCPR">
-        <InputText @bind-Value="Input.CPR" class="form-control" autocomplete="CPR" aria-required="true" placeholder="0000000000" />
-        <label for="CPR" class="form-label">CPR</label>
-        <div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-        </div>
-    </EditForm>
-</div>
+@if (showError)
+{
+    <p class="text-danger">An error occurred. Please check your input and try again.</p>
+}
+
+@if (showList)
+{
+    <p>
+        <input @bind="InputToDo" placeholder="Enter new Todo" />
+        <button @onclick="CreateToDo">Create</button>
+    </p>
+
+    @if (toDoList != null && toDoList.Any())
+    {
+        <ul>
+            @foreach (var todo in toDoList)
+            {
+                <li>@todo.task</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No items in the to-do list.</p>
+    }
+}
+
 
 @code {
+    private bool CPRLoggedIn;
+    private string userName;
+    ElementReference EmailElementReference;
+    private bool showError;
+    private bool showList = false;
+    private Cpr cprObjectNow = new Cpr();
+    string InputToDo = "";
+    private List<Todolist> toDoList = new List<Todolist>();
+
 
     [SupplyParameterFromForm]
-    private InputModel Input { get; set; } = new();
+    private InputCPRModel Input { get; set; } = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-    private sealed class InputModel
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+        }
+    }
+
+    private async Task LoginCPR()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        //string TextToEncrypt = "sasasasasa";
+        //string EncryptedText = SymtriskHandler.protect(TextToEncrypt);
+        //string DecryptedText = SymtriskHandler.unprotect(EncryptedText);
+
+        //string AsymeticText = "Jas";
+        //string encryptedAsymetricText = await AsymetricHandler.AsyncEncryptAgain(AsymeticText);
+        //string decryptedAsymetricText = AsymetricHandler.AsyncDecrypt(encryptedAsymetricText);
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            var userName = user.Identity.Name;
+            Console.WriteLine($"Logged in user: {userName}");
+
+            var cprObject = await GetCPRObjectByCPRNumberAndEmail(Input.CPR,userName);
+            cprObjectNow = cprObject;
+
+            if (cprObject != null)
+            {
+                if (cprObject.Email == userName) // Check if the CPR object's Email value is equal to the user.Identity.name
+                {
+                    showError = false;
+                    ShowToDoList(cprObjectNow.Todolist);
+                }
+                else{ showError = true;}
+            }
+            else{ showError = true; }
+        }
+        else{showError = true;}
+    }
+
+    private async Task CreateToDo()
+    {
+        if (InputToDo == null)
+        {
+            Console.WriteLine("InputToDo is null");
+            return;
+        }
+
+        Todolist itemToDo = new Todolist { task = InputToDo};
+        cprObjectNow = await ToDoContext.AddToDoListToCpr(cprObjectNow, itemToDo);
+        ShowToDoList(cprObjectNow.Todolist);
+     }
+
+    private async Task<Cpr?> GetCPRObjectByCPRNumberAndEmail(string cprNumber,string mail)
+    {
+        int IntcprNumber = ToInt(cprNumber);
+        Cpr? cprObject = new Cpr();
+        cprObject = await ToDoContext.GetCPRObjectByCPRNumberAndEmail(IntcprNumber,mail);
+        return cprObject;
+    }
+
+    private void ShowToDoList(List<Todolist> _ToDoList)
+    {
+        toDoList = _ToDoList; // Set the todo list to the list passed from the cpr object
+        showList = true; // Show the list
+    }
+
+    public int ToInt(string str)
+    {
+        if (int.TryParse(str, out int result))
+        {
+            return result;
+        }
+        return 0;
+    }
+
+    private sealed class InputCPRModel
     {
         [Required]
-        [EmailAddress]
+        [RegularExpression("^[0-9]*$", ErrorMessage = "Only numbers are allowed.")]
+        [StringLength(10, ErrorMessage = "CPR must be 10 characters long.", MinimumLength = 10)]
         public string CPR { get; set; } = "";
-
-        [Required]
-        [DataType(DataType.Password)]
-        public string Password { get; set; } = "";
-
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
     }
 
-    private void LoginCPR()
-    {
-        
-    }
 }

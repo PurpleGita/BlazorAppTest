@@ -1,13 +1,23 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BlazorAppTest.Components.Account.Pages;
+using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlazorAppTest.Components.Model
 {
     public class Cpr
     {
-        public string CprNumber { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+
+        public int CprNumber { get; set; }
 
         public string Email { get; set; }
 
+        public List<Todolist> Todolist { get; set; }
 
     }
+
+
 }
