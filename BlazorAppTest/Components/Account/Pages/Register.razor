@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
+@using BlazorAppTest.Components.Model
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using BlazorAppTest.Data
@@ -14,18 +15,17 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject ApplicationDbContext _context
+@inject ToDoContext _ToDoContext
 
 <PageTitle>Register</PageTitle>
 
-<h1>Register</h1>
 
-<div class="row">
-    <div class="col-md-4">
+<div class="row" style="width: auto; margin-left: auto; margin-right: auto">
+    <div class="col-md-4" style="width: auto; margin-left: auto; margin-right: auto">
         <StatusMessage Message="@Message" />
         <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
@@ -42,15 +42,14 @@
                 <label for="confirm-password">Confirm Password</label>
                 <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
             </div>
+           @*<div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Cpr" class="form-control" aria-required="true" placeholder="CPR" />
+                <label for="cpr">CPR</label>
+                <ValidationMessage For="() => Input.Cpr" class="text-danger" />
+            </div> *@
+
             <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
     </div>
 </div>
 
@@ -81,6 +80,13 @@
         }
 
         Logger.LogInformation("User created a new account with password.");
+
+        // int inputToInt = ToInt(Input.Cpr);
+        // // Create CPR object and save to database
+        // var cpr = new Cpr { Email = Input.Email, CprNumber = inputToInt };
+        // _ToDoContext.Cprs.Add(cpr);
+        // await _ToDoContext.SaveChangesAsync();
+
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -141,5 +147,18 @@
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = "";
+
+        //[Required]
+        //[Display(Name = "CPR")]
+        //public string Cpr { get; set; } = "";
+    }
+
+    public int ToInt(string str)
+    {
+        if (int.TryParse(str, out int result))
+        {
+            return result;
+        }
+        return 0;
     }
 }
